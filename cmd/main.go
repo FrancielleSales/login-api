@@ -6,10 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func main() {
+func init() {
 	config.ConnectDatabase()
-	port := config.LoadPort()
+	config.SyncDatabase()
+}
 
+func main() {
+	port := config.LoadPort()
 	r := gin.Default()
 
 	v1 := r.Group("/v1")

@@ -9,40 +9,38 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Connect to the database and synchronize migrations
 func init() {
-	// Conectar ao banco de dados e sincronizar as migrações
-	config.ConnectDatabase() // Assume que isso cria uma conexão com o banco
-	config.SyncDatabase()    // Assume que isso aplica as migrações do banco
+	config.ConnectDatabase()
+	config.SyncDatabase()
+}
+
+// Create users repository, service, and handler instances
+func getUserHandler() *handlers.UserHandler {
+	db := config.DB
+	userRepo := repositories.NewUserRepository(db)
+	userService := services.NewUserService(userRepo)
+	return handlers.NewUserHandler(userService)
 }
 
 func main() {
-	// Carregar a porta a partir da configuração
-	port := config.LoadPort()
+	// Create users handler
+	usersHandler := getUserHandler()
 
-	// Criar o servidor Gin
+	// Create the Gin server
 	r := gin.Default()
 
-	// Criar instâncias de repositório, serviço e handler
-	db := config.DB // Supondo que config.GetDB() retorna a instância do banco
-	userRepo := repositories.NewUserRepository(db) // Inicializa o repositório de usuários
-	userService := services.NewUserService(userRepo) // Inicializa o serviço de usuários
-	usersHandler := handlers.NewUserHandler(userService) // Inicializa o handler de usuários
-
-	// Definir as rotas
+	// Define routes
 	v1 := r.Group("/v1")
 	{
-		// Endpoint de ping para testar o servidor
-		v1.GET("/ping", func(c *gin.Context) {
-			c.JSON(200, gin.H{
-				"message": "pong",
-			})
-		})
-
-		// Endpoint para criação de usuários
+		// Endpoint for creating users
 		v1.POST("/users", usersHandler.CreateUser)
 	}
 
-	// Iniciar o servidor
+	// Load port from configuration
+	port := config.LoadPort()
+
+	// Start server
 	if err := r.Run(":" + port); err != nil {
 		log.Fatal("Failed to run the server: ", err)
 	}
